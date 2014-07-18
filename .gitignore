@@ -1,4 +1,4 @@
 *.pyc
 .gitignore
 deploy
-token.py
+twilio_info.py
