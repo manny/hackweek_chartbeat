@@ -77,7 +77,7 @@ void connectToServer() {
   Serial.println("connecting to server...");
   if (client.connect(serverName, 80)) {
     Serial.println("making HTTP request...");
-  // make HTTP GET request to twitter:
+  // make HTTP GET request to server:
     client.println("GET /ping HTTP/1.1");
     client.println("HOST: 198.199.82.132");
     client.println();

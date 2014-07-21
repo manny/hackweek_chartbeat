@@ -7,12 +7,12 @@ app.debug = True
 
 @app.route('/<path:url>', methods=['get'])
 def home(url):
-    if request.method == 'GET':
+    if request.method == 'GET' and url == 'ping':
         client = TwilioRestClient(account_sid, auth_token)
-        message = client.messages.create(body="yo dawg",
+        message = client.messages.create(body="Honey Bunches of Oats supply depleted. Proceed with secondary breakfast protocol",
                 to="+18565582697",
                 from_="+18564578834")
-        return "request received"
+    return "request recived"
 if __name__ == '__main__':
     app.run()
 
