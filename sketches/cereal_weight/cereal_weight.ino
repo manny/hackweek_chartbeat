@@ -10,65 +10,66 @@ IPAddress ip(10,20,196,73); //<<< ENTER YOUR IP ADDRESS HERE!!!
 // initialize the library instance:
 EthernetClient client;
 
-const int requestInterval = 60000;  // delay between requests
-
-const int buttonPin = 2;
-int buttonState = 0;
+//const int requestInterval = 60000;  // delay between requests
 
 char serverName[] = "198.199.82.132";  // 
 
 boolean requested;                   // whether you've made a request since connecting
-long lastAttemptTime = 0;            // last time you connected to the server, in milliseconds
 
 String currentLine = "";            // string to hold the text from server
 
+//Weight settings
+
+long time = 0;            // last time weight reading was taken
+int timeBetweenReadings = 12000;
+
+float loadA= 161; //grams
+int analogvalA = 3200;
+
+float loadB = 91;
+int analogvalB = 1800;
+
+float analogValueAverage = 0;
+
+
 void setup() {
- 
-  pinMode(buttonPin, INPUT);
   
-  // reserve space for the strings:
   currentLine.reserve(256);
 
-// initialize serial:
   Serial.begin(9600);
-  // attempt a DHCP connection:
+
   if (!Ethernet.begin(mac)) {
-    // if DHCP fails, start with a hard-coded address:
     Ethernet.begin(mac, ip);
   }
-  // make api call
-  //connectToServer();
 }
 
 
 void loop(){
-  
-  buttonState = digitalRead(buttonPin);
-  if(buttonState == HIGH) {
-    Serial.println("button pressed!");
-    connectToServer(); 
+  int analogValue = analogRead(0);
+  analogValueAverage = 0.99*analogValueAverage + 0.01*analogValue;
+
+  if(millis() > time + timeBetweeenReadings){
+    float load = analogToLoad(analogValueAverage);
+    Serial.print("analogValue: ");
+    Serial.print(avanlogValueAverage);
+    time = millis();
+    if(load < 440){
+        delay(10*60*1000);
+        verify_weight();
+    }
   }
-  Serial.println("connection test");
+
   if (client.connected()) {
     if (client.available()) {
-      // read incoming bytes:
       char inChar = client.read();
-
-      // add incoming byte to end of line:
       currentLine += inChar; 
-
-      // if you get a newline, clear the line:
       if (inChar == '\n') {
         currentLine = "";
       } 
       Serial.print(inChar);
     }
     client.stop();
-    Serial.println("cooling down for 2....");
-    delay(2000);
-    Serial.println("ready");
   } 
-  //delay(1000);
 }
 
 void connectToServer() {
@@ -77,10 +78,28 @@ void connectToServer() {
   if (client.connect(serverName, 80)) {
     Serial.println("making HTTP request...");
   // make HTTP GET request to twitter:
-    client.println("GET /jump HTTP/1.1");
+    client.println("GET /ping HTTP/1.1");
     client.println("HOST: 198.199.82.132");
     client.println();
   }
   // note the time of this connect attempt:
   lastAttemptTime = millis();
+}
+
+void verifyWeight(){
+  int analogValue = analogRead(0);
+  analogValueAverage = 0.99*analogValueAverage + 0.01*analogValue;
+  float load = analogToLoad(analogValueAverage);
+  if(load <440){
+    connectToServer();
+  }
+}
+
+float analogToLoad(float analogval){
+  float load = mapfloat(analogval, analogvalA, analogvalB, loadA, loadB);
+  return load
+}
+
+float mapfloat(float x, float in_min, float in_max, float out_max){
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
